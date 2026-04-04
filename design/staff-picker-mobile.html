@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StaffPicker — Mobile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Tokens Coongro ── */
+    :root {
+      --cg-bg: #F6F5F1;
+      --cg-surface: #FFFFFF;
+      --cg-border: #E8E6E1;
+      --cg-text: #1A1918;
+      --cg-text-muted: #9B9893;
+      --cg-accent: #F5A800;
+      --cg-accent-hover: #E09800;
+      --cg-gold-lt: #FFFBF0;
+      --cg-danger: #DC2626;
+      --cg-danger-bg: #FEF2F2;
+      --cg-success: #16A34A;
+      --cg-warning: #F59E0B;
+      --cg-r-md: 8px;
+      --cg-r-lg: 12px;
+      --cg-r-xl: 18px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--cg-bg);
+      color: var(--cg-text);
+      padding: 16px;
+      max-width: 390px;
+      margin: 0 auto;
+    }
+    h1, h2, h3 { font-family: 'Noto Serif JP', serif; }
+
+    .section { margin-bottom: 40px; }
+    .section-title {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .section-desc {
+      font-size: 12px;
+      color: var(--cg-text-muted);
+      margin-bottom: 16px;
+    }
+    .demo-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cg-text-muted);
+      margin-bottom: 8px;
+      margin-top: 16px;
+    }
+    .demo-label:first-child { margin-top: 0; }
+
+    /* ── Form field ── */
+    .field-label {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .field-label .required {
+      color: var(--cg-danger);
+      margin-left: 2px;
+    }
+
+    /* ── Trigger ── */
+    .picker-trigger {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      height: 44px; /* Mínimo tap target */
+      padding: 0 12px;
+      border: 1px solid var(--cg-border);
+      border-radius: var(--cg-r-md);
+      background: var(--cg-surface);
+    }
+    .picker-trigger.focused {
+      border-color: var(--cg-accent);
+      box-shadow: 0 0 0 2px var(--cg-gold-lt);
+    }
+    .picker-trigger .search-icon {
+      color: var(--cg-text-muted);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .picker-trigger input {
+      border: none;
+      outline: none;
+      flex: 1;
+      font-size: 16px; /* 16px evita zoom en iOS */
+      font-family: inherit;
+      color: var(--cg-text);
+      background: transparent;
+    }
+    .picker-trigger input::placeholder {
+      color: var(--cg-text-muted);
+    }
+    .picker-trigger .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--cg-border);
+      border-top-color: var(--cg-accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Dropdown (en móvil, usa max-height del viewport) ── */
+    .picker-dropdown {
+      width: 100%;
+      max-height: 50vh;
+      overflow-y: auto;
+      border: 1px solid var(--cg-border);
+      border-radius: var(--cg-r-md);
+      background: var(--cg-surface);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      margin-top: 4px;
+      padding: 4px;
+    }
+
+    /* ── Item ── */
+    .picker-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      min-height: 48px; /* Tap target */
+    }
+    .picker-item.highlighted {
+      background: var(--cg-gold-lt);
+    }
+    .picker-item .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .avatar.blue    { background: #DBEAFE; color: #1D4ED8; }
+    .avatar.green   { background: #DCFCE7; color: #15803D; }
+    .avatar.purple  { background: #EDE9FE; color: #6D28D9; }
+    .avatar.orange  { background: #FFF7ED; color: #C2410C; }
+    .avatar.pink    { background: #FCE7F3; color: #BE185D; }
+
+    .picker-item .info { flex: 1; min-width: 0; }
+    .picker-item .name {
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .picker-item .subtitle {
+      font-size: 12px;
+      color: var(--cg-text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .picker-item .badge {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .badge.active   { background: #DCFCE7; color: #15803D; }
+    .badge.inactive { background: #F3F4F6; color: #6B7280; }
+
+    .picker-empty {
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--cg-text-muted);
+      font-size: 13px;
+    }
+
+    /* ── Botón "Crear" al final del dropdown ── */
+    .picker-create {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.1s;
+      border-top: 1px solid var(--cg-border);
+      margin-top: 4px;
+      color: var(--cg-accent-hover);
+      font-size: 14px;
+      font-weight: 500;
+      min-height: 48px;
+    }
+    .picker-create:hover {
+      background: var(--cg-gold-lt);
+    }
+    .picker-create .create-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cg-gold-lt);
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    /* ── Group ── */
+    .picker-group-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cg-text-muted);
+      padding: 10px 10px 4px;
+    }
+    .picker-separator {
+      height: 1px;
+      background: var(--cg-border);
+      margin: 4px 8px;
+    }
+
+    /* ── Chip ── */
+    .staff-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px 6px 6px;
+      border: 1px solid var(--cg-border);
+      border-radius: 20px;
+      background: var(--cg-surface);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .staff-chip .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .staff-chip .chip-remove {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--cg-text-muted);
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: 2px;
+    }
+
+    /* ── Form card ── */
+    .form-card {
+      background: var(--cg-surface);
+      border: 1px solid var(--cg-border);
+      border-radius: var(--cg-r-xl);
+      padding: 20px;
+    }
+    .form-field {
+      margin-bottom: 16px;
+    }
+    .form-field:last-child { margin-bottom: 0; }
+    .form-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--cg-border);
+      border-radius: var(--cg-r-md);
+      font-size: 16px;
+      font-family: inherit;
+      background: var(--cg-surface);
+      color: var(--cg-text);
+    }
+    .form-input::placeholder { color: var(--cg-text-muted); }
+  </style>
+</head>
+<body>
+
+  <h1 style="font-size: 22px; margin-bottom: 4px;">StaffPicker</h1>
+  <p style="color: var(--cg-text-muted); font-size: 13px; margin-bottom: 32px;">
+    Versión móvil — 390px viewport
+  </p>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ESTADO 1: Trigger sin selección              -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">1. Trigger</div>
+    <div class="section-desc">Input 44px de alto (mínimo tap target). Font-size 16px para evitar auto-zoom en iOS.</div>
+
+    <div class="demo-label">Default</div>
+    <div class="field-label">Profesional<span class="required">*</span></div>
+    <div class="picker-trigger">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Buscar profesional..." readonly>
+    </div>
+
+    <div class="demo-label">Typing</div>
+    <div class="field-label">Profesional<span class="required">*</span></div>
+    <div class="picker-trigger focused">
+      <span class="search-icon">🔍</span>
+      <input type="text" value="Mar">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ESTADO 2: Dropdown con resultados            -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">2. Dropdown</div>
+    <div class="section-desc">max-height 50vh. Items con min-height 48px para tap targets. Avatar 36px (más grande que desktop).</div>
+
+    <div class="field-label">Profesional<span class="required">*</span></div>
+    <div class="picker-trigger focused">
+      <span class="search-icon">🔍</span>
+      <input type="text" value="Mar">
+    </div>
+    <div class="picker-dropdown">
+      <div class="picker-item highlighted">
+        <div class="avatar blue">MG</div>
+        <div class="info">
+          <div class="name">Dra. María González</div>
+          <div class="subtitle">Veterinaria · Cirugía</div>
+        </div>
+        <span class="badge active">Activo</span>
+      </div>
+      <div class="picker-item">
+        <div class="avatar green">ML</div>
+        <div class="info">
+          <div class="name">Marcos López</div>
+          <div class="subtitle">Técnico · Laboratorio</div>
+        </div>
+        <span class="badge active">Activo</span>
+      </div>
+      <div class="picker-create">
+        <div class="create-icon">+</div>
+        Crear "Mar"
+      </div>
+    </div>
+
+    <div class="demo-label" style="margin-top: 24px;">Agrupado por rol</div>
+    <div class="field-label">Profesional<span class="required">*</span></div>
+    <div class="picker-trigger focused">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Buscar profesional...">
+    </div>
+    <div class="picker-dropdown">
+      <div class="picker-group-label">Veterinarios</div>
+      <div class="picker-item">
+        <div class="avatar blue">MG</div>
+        <div class="info">
+          <div class="name">Dra. María González</div>
+          <div class="subtitle">Cirugía · MP 12345</div>
+        </div>
+      </div>
+      <div class="picker-item">
+        <div class="avatar orange">CP</div>
+        <div class="info">
+          <div class="name">Dr. Carlos Pérez</div>
+          <div class="subtitle">Dermatología · MP 67890</div>
+        </div>
+      </div>
+      <div class="picker-separator"></div>
+      <div class="picker-group-label">Técnicos</div>
+      <div class="picker-item">
+        <div class="avatar green">ML</div>
+        <div class="info">
+          <div class="name">Marcos López</div>
+          <div class="subtitle">Laboratorio</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-label" style="margin-top: 24px;">Sin resultados</div>
+    <div class="field-label">Profesional<span class="required">*</span></div>
+    <div class="picker-trigger focused">
+      <span class="search-icon">🔍</span>
+      <input type="text" value="zzz">
+    </div>
+    <div class="picker-dropdown">
+      <div class="picker-empty">
+        Sin resultados para "zzz"
+      </div>
+      <div class="picker-create">
+        <div class="create-icon">+</div>
+        Crear "zzz"
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ESTADO 3: Chip seleccionado                  -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">3. Seleccionado</div>
+    <div class="section-desc">Chip con botón de remover 28px (tap-friendly).</div>
+
+    <div class="field-label">Profesional<span class="required">*</span></div>
+    <div class="staff-chip">
+      <div class="avatar blue">MG</div>
+      <span>Dra. María González</span>
+      <button class="chip-remove" title="Quitar">✕</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- CONTEXTO: Formulario de consulta             -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">4. En contexto — Formulario</div>
+    <div class="section-desc">Formulario de nueva consulta en móvil. Campos stacked, ancho completo.</div>
+
+    <div class="form-card">
+      <h3 style="font-size: 16px; margin-bottom: 16px;">Nueva consulta</h3>
+
+      <div class="form-field">
+        <div class="field-label">Paciente<span class="required">*</span></div>
+        <div class="staff-chip">
+          <div class="avatar green">🐕</div>
+          <span>Rocky</span>
+          <button class="chip-remove" title="Quitar">✕</button>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <div class="field-label">Profesional<span class="required">*</span></div>
+        <div class="staff-chip">
+          <div class="avatar blue">MG</div>
+          <span>Dra. María González</span>
+          <button class="chip-remove" title="Quitar">✕</button>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <div class="field-label">Fecha<span class="required">*</span></div>
+        <input class="form-input" type="text" value="04/04/2026" readonly>
+      </div>
+
+      <div class="form-field">
+        <div class="field-label">Categoría</div>
+        <input class="form-input" type="text" placeholder="Seleccionar..." readonly>
+      </div>
+
+      <div class="form-field">
+        <div class="field-label">Motivo<span class="required">*</span></div>
+        <input class="form-input" type="text" placeholder="Describir motivo..." readonly>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SPECS MOBILE                                 -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Specs Mobile</div>
+    <div style="font-size: 12px; color: var(--cg-text-muted); line-height: 1.8;">
+      <strong>Trigger:</strong> height 44px (tap target), font-size 16px (no iOS zoom)<br>
+      <strong>Dropdown:</strong> max-height 50vh, items min-height 48px<br>
+      <strong>Avatar:</strong> 36px dropdown / 28px chip (más grande que desktop)<br>
+      <strong>Chip remove:</strong> 28px × 28px (tap friendly)<br>
+      <strong>Comportamiento:</strong> Popover nativo de Radix — se ajusta al viewport<br>
+    </div>
+  </div>
+
+</body>
+</html>

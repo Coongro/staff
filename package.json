@@ -1,6 +1,6 @@
 {
   "name": "@coongro/staff",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Módulo genérico de empleados con roles. Exporta StaffPicker, StaffBadge, hooks y repositorio para uso en otros plugins.",
   "main": "dist/index.js",

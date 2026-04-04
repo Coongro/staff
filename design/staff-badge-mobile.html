@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StaffBadge — Mobile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Tokens Coongro ── */
+    :root {
+      --cg-bg: #F6F5F1;
+      --cg-surface: #FFFFFF;
+      --cg-border: #E8E6E1;
+      --cg-text: #1A1918;
+      --cg-text-muted: #9B9893;
+      --cg-accent: #F5A800;
+      --cg-accent-hover: #E09800;
+      --cg-gold-lt: #FFFBF0;
+      --cg-danger: #DC2626;
+      --cg-danger-bg: #FEF2F2;
+      --cg-success: #16A34A;
+      --cg-warning: #F59E0B;
+      --cg-r-md: 8px;
+      --cg-r-lg: 12px;
+      --cg-r-xl: 18px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--cg-bg);
+      color: var(--cg-text);
+      padding: 16px;
+      max-width: 390px;
+      margin: 0 auto;
+    }
+    h1, h2, h3 { font-family: 'Noto Serif JP', serif; }
+
+    .section { margin-bottom: 40px; }
+    .section-title {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .section-desc {
+      font-size: 12px;
+      color: var(--cg-text-muted);
+      margin-bottom: 16px;
+    }
+    .demo-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cg-text-muted);
+      margin-bottom: 8px;
+      margin-top: 16px;
+    }
+    .demo-label:first-child { margin-top: 0; }
+
+    /* ── Avatar base ── */
+    .avatar {
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .avatar.blue    { background: #DBEAFE; color: #1D4ED8; }
+    .avatar.green   { background: #DCFCE7; color: #15803D; }
+    .avatar.purple  { background: #EDE9FE; color: #6D28D9; }
+    .avatar.orange  { background: #FFF7ED; color: #C2410C; }
+    .avatar.pink    { background: #FCE7F3; color: #BE185D; }
+    .avatar.gray    { background: #F3F4F6; color: #6B7280; }
+
+    /* ── Compact ── */
+    .badge-compact {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-compact .avatar {
+      width: 24px;
+      height: 24px;
+      font-size: 10px;
+    }
+    .badge-compact .name {
+      font-size: 14px;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Default ── */
+    .badge-default {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge-default .avatar {
+      width: 32px;
+      height: 32px;
+      font-size: 13px;
+    }
+    .badge-default .name {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+    .badge-default .role {
+      font-size: 12px;
+      color: var(--cg-text-muted);
+      line-height: 1.2;
+    }
+
+    /* ── Full ── */
+    .badge-full {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--cg-surface);
+      border: 1px solid var(--cg-border);
+      border-radius: var(--cg-r-lg);
+    }
+    .badge-full .avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 15px;
+    }
+    .badge-full .info {
+      flex: 1;
+      min-width: 0;
+    }
+    .badge-full .name {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .badge-full .role {
+      font-size: 12px;
+      color: var(--cg-text-muted);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .badge-full .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.active  { background: var(--cg-success); }
+    .status-dot.inactive { background: #D1D5DB; }
+
+    /* ── Inactive ── */
+    .badge-compact.inactive .name,
+    .badge-default.inactive .name,
+    .badge-full.inactive .name {
+      color: var(--cg-text-muted);
+      text-decoration: line-through;
+    }
+
+    /* ── Empty ── */
+    .badge-empty {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--cg-text-muted);
+      font-size: 14px;
+      font-style: italic;
+    }
+    .badge-empty .avatar {
+      width: 24px;
+      height: 24px;
+      font-size: 12px;
+    }
+
+    /* ── Loading ── */
+    .badge-skeleton {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #E8E6E1 25%, #F0EFEB 50%, #E8E6E1 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s ease-in-out infinite;
+      border-radius: 4px;
+    }
+    .skeleton.circle { border-radius: 50%; }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Contexto: mobile card (mobileRender de DataTable) ── */
+    .mobile-card {
+      background: var(--cg-surface);
+      border: 1px solid var(--cg-border);
+      border-radius: var(--cg-r-lg);
+      padding: 14px 16px;
+    }
+    .mobile-card + .mobile-card { margin-top: 8px; }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .card-patient {
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .card-date {
+      font-size: 12px;
+      color: var(--cg-text-muted);
+    }
+    .card-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+    .card-reason {
+      font-size: 13px;
+      color: var(--cg-text-muted);
+    }
+    .card-status {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .card-status.progress { background: #DBEAFE; color: #1D4ED8; }
+    .card-status.done     { background: #DCFCE7; color: #15803D; }
+
+    /* ── Contexto: agenda card mobile ── */
+    .agenda-card {
+      background: var(--cg-surface);
+      border: 1px solid var(--cg-border);
+      border-radius: var(--cg-r-lg);
+      padding: 14px 16px;
+    }
+    .agenda-card + .agenda-card { margin-top: 8px; }
+    .agenda-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .agenda-time {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .agenda-status {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 10px;
+    }
+    .agenda-status.confirmed { background: #DBEAFE; color: #1D4ED8; }
+    .agenda-status.arrived   { background: #DCFCE7; color: #15803D; }
+    .agenda-patient {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    .agenda-reason {
+      font-size: 12px;
+      color: var(--cg-text-muted);
+      margin-bottom: 10px;
+    }
+    .agenda-divider {
+      height: 1px;
+      background: var(--cg-border);
+      margin-bottom: 10px;
+    }
+
+    /* ── Contexto: detalle consulta mobile ── */
+    .detail-card {
+      background: var(--cg-surface);
+      border: 1px solid var(--cg-border);
+      border-radius: var(--cg-r-xl);
+      padding: 20px;
+    }
+    .detail-card h3 {
+      font-size: 16px;
+      margin-bottom: 14px;
+    }
+    .detail-field {
+      margin-bottom: 14px;
+    }
+    .detail-field:last-child { margin-bottom: 0; }
+    .detail-label {
+      font-size: 12px;
+      color: var(--cg-text-muted);
+      margin-bottom: 4px;
+    }
+    .detail-value {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1 style="font-size: 22px; margin-bottom: 4px;">StaffBadge</h1>
+  <p style="color: var(--cg-text-muted); font-size: 13px; margin-bottom: 32px;">
+    Versión móvil — 390px viewport
+  </p>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- VARIANTES                                    -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">1. Variantes</div>
+    <div class="section-desc">Las tres variantes en viewport móvil. Mismos tamaños que desktop (el componente es inline, se adapta al contenedor).</div>
+
+    <div class="demo-label">Compact</div>
+    <div class="badge-compact">
+      <div class="avatar blue" style="width:24px;height:24px;font-size:10px;">MG</div>
+      <span class="name">Dra. María González</span>
+    </div>
+
+    <div class="demo-label">Default</div>
+    <div class="badge-default">
+      <div class="avatar blue">MG</div>
+      <div class="info">
+        <div class="name">Dra. María González</div>
+        <div class="role">Veterinaria · Cirugía</div>
+      </div>
+    </div>
+
+    <div class="demo-label">Full</div>
+    <div class="badge-full">
+      <div class="avatar blue" style="width:40px;height:40px;font-size:15px;">MG</div>
+      <div class="info">
+        <div class="name">Dra. María González</div>
+        <div class="role">Veterinaria · Cirugía · MP 12345</div>
+      </div>
+      <div class="status-dot active"></div>
+    </div>
+
+    <div class="demo-label">Sin asignar</div>
+    <div class="badge-empty">
+      <div class="avatar gray" style="width:24px;height:24px;font-size:12px;">—</div>
+      <span>Sin asignar</span>
+    </div>
+
+    <div class="demo-label">Loading</div>
+    <div class="badge-skeleton">
+      <div class="skeleton circle" style="width:24px;height:24px;"></div>
+      <div class="skeleton" style="width:120px;height:14px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- CONTEXTO: Cards de consulta (mobileRender)   -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">2. En contexto — Cards de consulta</div>
+    <div class="section-desc">Variante compact dentro del mobileRender de la tabla de consultas.</div>
+
+    <div class="mobile-card">
+      <div class="card-header">
+        <span class="card-patient">Rocky</span>
+        <span class="card-date">04/04/2026</span>
+      </div>
+      <div class="card-row">
+        <div class="badge-compact">
+          <div class="avatar blue" style="width:24px;height:24px;font-size:10px;">MG</div>
+          <span class="name">Dra. María González</span>
+        </div>
+        <span class="card-status progress">En curso</span>
+      </div>
+      <div class="card-reason" style="margin-top: 4px;">Control post-operatorio</div>
+    </div>
+
+    <div class="mobile-card">
+      <div class="card-header">
+        <span class="card-patient">Luna</span>
+        <span class="card-date">04/04/2026</span>
+      </div>
+      <div class="card-row">
+        <div class="badge-compact">
+          <div class="avatar orange" style="width:24px;height:24px;font-size:10px;">CP</div>
+          <span class="name">Dr. Carlos Pérez</span>
+        </div>
+        <span class="card-status done">Completada</span>
+      </div>
+      <div class="card-reason" style="margin-top: 4px;">Dermatitis alérgica</div>
+    </div>
+
+    <div class="mobile-card">
+      <div class="card-header">
+        <span class="card-patient">Max</span>
+        <span class="card-date">03/04/2026</span>
+      </div>
+      <div class="card-row">
+        <div class="badge-empty">
+          <div class="avatar gray" style="width:24px;height:24px;font-size:12px;">—</div>
+          <span>Sin asignar</span>
+        </div>
+        <span class="card-status progress">Pendiente</span>
+      </div>
+      <div class="card-reason" style="margin-top: 4px;">Vacunación anual</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- CONTEXTO: Agenda cards mobile                 -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">3. En contexto — Agenda del día</div>
+    <div class="section-desc">Variante default dentro del card de turno en la vista Agenda móvil. Staff debajo del separador.</div>
+
+    <div class="agenda-card">
+      <div class="agenda-top">
+        <span class="agenda-time">09:00</span>
+        <span class="agenda-status confirmed">Confirmado</span>
+      </div>
+      <div class="agenda-patient">Rocky — Juan Martínez</div>
+      <div class="agenda-reason">Control post-operatorio</div>
+      <div class="agenda-divider"></div>
+      <div class="badge-default">
+        <div class="avatar blue">MG</div>
+        <div class="info">
+          <div class="name">Dra. González</div>
+          <div class="role">Cirugía</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="agenda-card">
+      <div class="agenda-top">
+        <span class="agenda-time">09:30</span>
+        <span class="agenda-status arrived">Llegó</span>
+      </div>
+      <div class="agenda-patient">Luna — María López</div>
+      <div class="agenda-reason">Dermatitis alérgica</div>
+      <div class="agenda-divider"></div>
+      <div class="badge-default">
+        <div class="avatar orange">CP</div>
+        <div class="info">
+          <div class="name">Dr. Pérez</div>
+          <div class="role">Dermatología</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- CONTEXTO: Detalle consulta mobile             -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">4. En contexto — Detalle de consulta</div>
+    <div class="section-desc">Variante full en el detalle de una consulta. En móvil los campos van stacked.</div>
+
+    <div class="detail-card">
+      <h3>Consulta #1042</h3>
+      <div class="detail-field">
+        <div class="detail-label">Fecha</div>
+        <div class="detail-value">04/04/2026 — 09:00</div>
+      </div>
+      <div class="detail-field">
+        <div class="detail-label">Paciente</div>
+        <div class="detail-value">Rocky (Labrador, 5 años)</div>
+      </div>
+      <div class="detail-field">
+        <div class="detail-label">Profesional</div>
+        <div class="detail-value">
+          <div class="badge-full">
+            <div class="avatar blue" style="width:40px;height:40px;font-size:15px;">MG</div>
+            <div class="info">
+              <div class="name">Dra. María González</div>
+              <div class="role">Veterinaria · Cirugía · MP 12345</div>
+            </div>
+            <div class="status-dot active"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-field">
+        <div class="detail-label">Motivo</div>
+        <div class="detail-value">Control post-operatorio</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SPECS MOBILE                                 -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Specs Mobile</div>
+    <div style="font-size: 12px; color: var(--cg-text-muted); line-height: 1.8;">
+      <strong>Compact:</strong> mismos tamaños que desktop — es inline, se adapta al contenedor<br>
+      <strong>Default:</strong> mismos tamaños — usado en agenda cards debajo del separador<br>
+      <strong>Full:</strong> ancho completo (display flex, no inline-flex) — se estira al contenedor<br>
+      <strong>Truncamiento:</strong> rol con text-overflow ellipsis en viewport angosto<br>
+    </div>
+  </div>
+
+</body>
+</html>

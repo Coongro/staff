@@ -15,7 +15,17 @@
       {
         "module": "./dist/repositories/staff-member.repository.js",
         "export": "StaffMemberRepository",
-        "prefix": "staff.members"
+        "prefix": "staff.members",
+        "actions": [
+          "list",
+          "getById",
+          "create",
+          "update",
+          "delete",
+          "search",
+          "findByLicenseNumber",
+          "findByContactId"
+        ]
       }
     ]
   }

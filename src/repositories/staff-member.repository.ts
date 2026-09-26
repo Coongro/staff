@@ -23,6 +23,26 @@ export interface EnrichedStaffMemberRow extends StaffMemberRow {
   contact_avatar_url: string | null;
 }
 
+/** Columnas del miembro más los datos de su contacto (nombre, email, teléfono, avatar). */
+const ENRICHED_COLUMNS = {
+  id: staffMemberTable.id,
+  contact_id: staffMemberTable.contact_id,
+  role: staffMemberTable.role,
+  specialty: staffMemberTable.specialty,
+  license_number: staffMemberTable.license_number,
+  is_active: staffMemberTable.is_active,
+  metadata: staffMemberTable.metadata,
+  created_at: staffMemberTable.created_at,
+  updated_at: staffMemberTable.updated_at,
+  contact_name: contactTable.name,
+  contact_email: contactTable.email,
+  contact_phone: contactTable.phone,
+  contact_avatar_url: contactTable.avatar_url,
+};
+
+/** `contact_id` es texto y `contacts.id` uuid: se compara como texto. */
+const CONTACT_JOIN = eq(staffMemberTable.contact_id, sql`${contactTable.id}::text`);
+
 export class StaffMemberRepository {
   constructor(private readonly db: ModuleDatabaseAPI) {}
 
@@ -30,30 +50,24 @@ export class StaffMemberRepository {
   // CRUD base
   // ---------------------------------------------------------------------------
 
-  async list(): Promise<StaffMemberRow[]> {
-    return this.db.ormQuery((tx) => tx.select().from(staffMemberTable));
+  /**
+   * Todos los miembros, con los datos de su contacto como en `search` y `getById`
+   * (`contact_name`, `contact_email`, `contact_phone`, `contact_avatar_url`). Es un
+   * superconjunto de las columnas de antes: quien solo leía `id` o `contact_id` no
+   * cambia. Sin orden ni paginación, como siempre.
+   */
+  async list(): Promise<EnrichedStaffMemberRow[]> {
+    return this.db.ormQuery((tx) =>
+      tx.select(ENRICHED_COLUMNS).from(staffMemberTable).leftJoin(contactTable, CONTACT_JOIN)
+    ) as Promise<EnrichedStaffMemberRow[]>;
   }
 
   async getById({ id }: { id: string }): Promise<EnrichedStaffMemberRow | undefined> {
     const rows = await this.db.ormQuery((tx) =>
       tx
-        .select({
-          id: staffMemberTable.id,
-          contact_id: staffMemberTable.contact_id,
-          role: staffMemberTable.role,
-          specialty: staffMemberTable.specialty,
-          license_number: staffMemberTable.license_number,
-          is_active: staffMemberTable.is_active,
-          metadata: staffMemberTable.metadata,
-          created_at: staffMemberTable.created_at,
-          updated_at: staffMemberTable.updated_at,
-          contact_name: contactTable.name,
-          contact_email: contactTable.email,
-          contact_phone: contactTable.phone,
-          contact_avatar_url: contactTable.avatar_url,
-        })
+        .select(ENRICHED_COLUMNS)
         .from(staffMemberTable)
-        .leftJoin(contactTable, eq(staffMemberTable.contact_id, sql`${contactTable.id}::text`))
+        .leftJoin(contactTable, CONTACT_JOIN)
         .where(eq(staffMemberTable.id, id))
         .limit(1)
     );
@@ -150,23 +164,9 @@ export class StaffMemberRepository {
       }
 
       let q = tx
-        .select({
-          id: staffMemberTable.id,
-          contact_id: staffMemberTable.contact_id,
-          role: staffMemberTable.role,
-          specialty: staffMemberTable.specialty,
-          license_number: staffMemberTable.license_number,
-          is_active: staffMemberTable.is_active,
-          metadata: staffMemberTable.metadata,
-          created_at: staffMemberTable.created_at,
-          updated_at: staffMemberTable.updated_at,
-          contact_name: contactTable.name,
-          contact_email: contactTable.email,
-          contact_phone: contactTable.phone,
-          contact_avatar_url: contactTable.avatar_url,
-        })
+        .select(ENRICHED_COLUMNS)
         .from(staffMemberTable)
-        .leftJoin(contactTable, eq(staffMemberTable.contact_id, sql`${contactTable.id}::text`));
+        .leftJoin(contactTable, CONTACT_JOIN);
 
       if (conditions.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument

@@ -27,6 +27,41 @@
           "findByContactId"
         ]
       }
+    ],
+    "permissions": [
+      {
+        "id": "staff.members.read",
+        "label": "Ver empleados",
+        "description": "Consultar el equipo del negocio: nombres, datos de contacto y roles.",
+        "effect": "read",
+        "grants": {
+          "actions": [
+            "staff.members.findByContactId",
+            "staff.members.findByLicenseNumber",
+            "staff.members.getById",
+            "staff.members.list",
+            "staff.members.search"
+          ]
+        }
+      },
+      {
+        "id": "staff.members.manage",
+        "label": "Gestionar empleados",
+        "description": "Dar de alta y editar empleados.",
+        "effect": "write",
+        "grants": {
+          "actions": ["staff.members.create", "staff.members.update"]
+        },
+        "requires": ["staff.members.read"]
+      },
+      {
+        "id": "staff.members.delete",
+        "label": "Eliminar empleados",
+        "description": "Dar de baja empleados del negocio.",
+        "effect": "destructive",
+        "grants": { "actions": ["staff.members.delete"] },
+        "requires": ["staff.members.read"]
+      }
     ]
   }
 }

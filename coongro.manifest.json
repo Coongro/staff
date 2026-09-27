@@ -26,7 +26,7 @@
           "findByLicenseNumber",
           "findByContactId",
           "getByUser",
-          "me",
+          "getCurrent",
           "linkUser",
           "unlinkUser",
           "listUsers"
@@ -44,6 +44,8 @@
             "staff.members.findByContactId",
             "staff.members.findByLicenseNumber",
             "staff.members.getById",
+            "staff.members.getByUser",
+            "staff.members.getCurrent",
             "staff.members.list",
             "staff.members.search"
           ]
@@ -52,31 +54,26 @@
       {
         "id": "staff.members.manage",
         "label": "Gestionar empleados",
-        "description": "Dar de alta y editar empleados.",
+        "description": "Dar de alta y editar empleados, y vincular cada uno con su usuario del sistema.",
         "effect": "write",
         "grants": {
           "actions": [
             "staff.members.create",
+            "staff.members.linkUser",
+            "staff.members.listUsers",
+            "staff.members.unlinkUser",
             "staff.members.update"
           ]
         },
-        "requires": [
-          "staff.members.read"
-        ]
+        "requires": ["staff.members.read"]
       },
       {
         "id": "staff.members.delete",
         "label": "Eliminar empleados",
         "description": "Dar de baja empleados del negocio.",
         "effect": "destructive",
-        "grants": {
-          "actions": [
-            "staff.members.delete"
-          ]
-        },
-        "requires": [
-          "staff.members.read"
-        ]
+        "grants": { "actions": ["staff.members.delete"] },
+        "requires": ["staff.members.read"]
       }
     ]
   }

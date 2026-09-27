@@ -277,7 +277,7 @@ export class StaffMemberRepository {
    * (así «Mías» funciona sin configurar nada cuando los datos coinciden). Sin
    * sesión o sin coincidencia devuelve `null`.
    */
-  async me(): Promise<EnrichedStaffMemberRow | null> {
+  async getCurrent(): Promise<EnrichedStaffMemberRow | null> {
     const user = this.context?.users ? await this.context.users.current() : null;
     if (!user) return null;
     const linked = await this.getByUser({ userId: user.id });
@@ -315,11 +315,10 @@ export class StaffMemberRepository {
 
   /**
    * Usuarios del tenant con el miembro vinculado (si tiene), para elegir a quién
-   * vincular desde la gestión del equipo.
+   * vincular desde la gestión del equipo. Sin emails: el email de otro usuario lo
+   * ve solo el dueño del negocio (regla del Core en GET /users).
    */
-  async listUsers(): Promise<
-    Array<{ id: string; name: string; email: string | null; staff_id: string | null }>
-  > {
+  async listUsers(): Promise<Array<{ id: string; name: string; staff_id: string | null }>> {
     const users = this.context?.users?.list ? await this.context.users.list() : [];
     const links = (await this.db.ormQuery((tx) =>
       tx
@@ -330,8 +329,7 @@ export class StaffMemberRepository {
     const byUser = new Map(links.map((l) => [l.user_id, l.id]));
     return users.map((u) => ({
       id: String(u.id),
-      name: u.name?.trim() || u.email || String(u.id),
-      email: u.email ?? null,
+      name: u.name?.trim() || `Usuario ${String(u.id)}`,
       staff_id: byUser.get(String(u.id)) ?? null,
     }));
   }

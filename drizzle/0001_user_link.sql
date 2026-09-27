@@ -1,0 +1,2 @@
+ALTER TABLE "module_staff_staff_members" ADD COLUMN "user_id" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "uq_staff_members_user_id" ON "module_staff_staff_members" USING btree ("user_id") WHERE "module_staff_staff_members"."user_id" is not null;

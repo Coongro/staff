@@ -9,4 +9,5 @@ export { StaffMemberRepository } from './repositories/staff-member.repository.js
 export type {
   SearchParams,
   EnrichedStaffMemberRow,
+  StaffRepositoryContext,
 } from './repositories/staff-member.repository.js';

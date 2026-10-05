@@ -1,8 +1,9 @@
 /**
  * Hook para listar miembros del staff con búsqueda, filtros y paginación.
  */
-import { getHostReact, actions } from '@coongro/plugin-sdk';
+import { getHostReact } from '@coongro/plugin-sdk';
 
+import { staffClient } from '../lib/staffClient.js';
 import type { StaffFilters, SortDirection } from '../types/filters.js';
 import type { StaffMember } from '../types/staff-member.js';
 
@@ -57,18 +58,14 @@ export function useStaffMembers(options: UseStaffMembersOptions = {}): UseStaffM
     setLoading(true);
     setError(null);
     try {
-      const result = await actions.execute<StaffMember[]>('staff.members.search', {
+      const result = await staffClient.search({
         ...filters,
         limit: pageSize,
         offset: (page - 1) * pageSize,
       });
       if (!mountedRef.current) return;
-      setData(result);
-      if (result.length < pageSize) {
-        setTotal((page - 1) * pageSize + result.length);
-      } else {
-        setTotal(Math.max(total, page * pageSize + 1));
-      }
+      setData(result.items as StaffMember[]);
+      setTotal(result.total);
     } catch (err) {
       if (!mountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar personal');

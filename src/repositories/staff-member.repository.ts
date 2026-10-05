@@ -1,6 +1,6 @@
 import { contactTable } from '@coongro/contacts/server';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
-import { eq, and, or, ilike, asc, desc, sql, isNull, isNotNull } from 'drizzle-orm';
+import { eq, and, or, ilike, asc, desc, sql, isNull, isNotNull, type SQL } from 'drizzle-orm';
 
 import { staffMemberTable } from '../schema/staff-member.js';
 import type { StaffMemberRow, NewStaffMemberRow } from '../schema/staff-member.js';
@@ -90,7 +90,12 @@ export class StaffMemberRepository {
     return rows[0] as EnrichedStaffMemberRow | undefined;
   }
 
-  async create({ data }: { data: NewStaffMemberRow }): Promise<StaffMemberRow[]> {
+  /** Sin `id`, lo genera acá. */
+  async create({
+    data,
+  }: {
+    data: Omit<NewStaffMemberRow, 'id'> & { id?: string };
+  }): Promise<StaffMemberRow[]> {
     const id = data.id ?? crypto.randomUUID();
     const fullData = data as StaffMemberRow;
     if (fullData.user_id) await this.assertUserFree(String(fullData.user_id));
@@ -100,7 +105,7 @@ export class StaffMemberRepository {
     if (licenseNumber) {
       const existing = await this.findByLicenseNumber({ licenseNumber });
       if (existing && existing.is_active) {
-        throw new Error(`Ya existe un miembro activo con matrícula ${licenseNumber}`);
+        throw conflict(`Ya existe un miembro activo con matrícula ${licenseNumber}`);
       }
     }
 
@@ -126,7 +131,7 @@ export class StaffMemberRepository {
     if (licenseNumber) {
       const existing = await this.findByLicenseNumber({ licenseNumber });
       if (existing && existing.id !== id && existing.is_active) {
-        throw new Error(`Ya existe un miembro activo con matrícula ${licenseNumber}`);
+        throw conflict(`Ya existe un miembro activo con matrícula ${licenseNumber}`);
       }
     }
 
@@ -157,63 +162,17 @@ export class StaffMemberRepository {
     orderDir = 'asc',
   }: SearchParams): Promise<EnrichedStaffMemberRow[]> {
     return this.db.ormQuery((tx) => {
-      const conditions = [];
-
-      if (query) {
-        const pattern = `%${query}%`;
-        conditions.push(
-          or(
-            ilike(contactTable.name, pattern),
-            ilike(contactTable.email, pattern),
-            ilike(contactTable.phone, pattern),
-            ilike(staffMemberTable.role, pattern),
-            ilike(staffMemberTable.specialty, pattern),
-            ilike(staffMemberTable.license_number, pattern)
-          )
-        );
-      }
-
-      if (role) {
-        conditions.push(eq(staffMemberTable.role, role));
-      }
-
-      if (isActive !== undefined) {
-        conditions.push(eq(staffMemberTable.is_active, isActive));
-      }
+      const conditions = searchConditions({ query, role, isActive });
 
       let q = tx
         .select(ENRICHED_COLUMNS)
         .from(staffMemberTable)
-        .leftJoin(contactTable, CONTACT_JOIN);
-
-      if (conditions.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        q = q.where(and(...conditions)) as typeof q;
-      }
-
-      // Ordenamiento — por defecto por nombre del contacto
-      const dirFn = orderDir === 'desc' ? desc : asc;
-      const sortableColumns: Record<string, () => typeof q> = {
-        name: () => q.orderBy(dirFn(contactTable.name)) as typeof q,
-        role: () => q.orderBy(dirFn(staffMemberTable.role)) as typeof q,
-        is_active: () => q.orderBy(dirFn(staffMemberTable.is_active)) as typeof q,
-        created_at: () => q.orderBy(dirFn(staffMemberTable.created_at)) as typeof q,
-      };
-
-      const applySorting = orderByField ? sortableColumns[orderByField] : undefined;
-      if (applySorting) {
-        q = applySorting();
-      } else {
-        q = q.orderBy(asc(contactTable.name)) as typeof q;
-      }
-
-      if (limit) {
-        q = q.limit(limit) as typeof q;
-      }
-
-      if (offset) {
-        q = q.offset(offset) as typeof q;
-      }
+        .leftJoin(contactTable, CONTACT_JOIN)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(searchOrder(orderByField, orderDir))
+        .$dynamic();
+      if (limit) q = q.limit(limit);
+      if (offset) q = q.offset(offset);
 
       return q;
     }) as Promise<EnrichedStaffMemberRow[]>;
@@ -297,6 +256,47 @@ export class StaffMemberRepository {
     return (await this.getByUser({ userId: user.id })) ?? null;
   }
 
+  /**
+   * La página de `search` y cuántos cumplen los filtros, en UNA consulta:
+   * `count(*) OVER()` se calcula antes del LIMIT. Solo si la página vino vacía
+   * (un offset más allá del final) hace falta contar aparte.
+   */
+  async searchPage(
+    params: SearchParams
+  ): Promise<{ items: EnrichedStaffMemberRow[]; total: number }> {
+    const conditions = searchConditions(params);
+    const rows = (await this.db.ormQuery((tx) => {
+      let q = tx
+        .select({ ...ENRICHED_COLUMNS, total: sql<number>`count(*) over()`.mapWith(Number) })
+        .from(staffMemberTable)
+        .leftJoin(contactTable, CONTACT_JOIN)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(searchOrder(params.orderBy, params.orderDir ?? 'asc'))
+        .$dynamic();
+      if (params.limit) q = q.limit(params.limit);
+      if (params.offset) q = q.offset(params.offset);
+      return q;
+    })) as Array<EnrichedStaffMemberRow & { total: number }>;
+    if (rows.length === 0) {
+      return { items: [], total: params.offset ? await this.countSearch(params) : 0 };
+    }
+    const total = rows[0]?.total ?? 0;
+    return { items: rows.map(({ total: _total, ...row }) => row), total };
+  }
+
+  /** Cuántos miembros cumplen los filtros de `search` (sin paginar). */
+  async countSearch(params: SearchParams): Promise<number> {
+    const conditions = searchConditions(params);
+    const rows = await this.db.ormQuery((tx) =>
+      tx
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(staffMemberTable)
+        .leftJoin(contactTable, CONTACT_JOIN)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+    );
+    return rows[0]?.count ?? 0;
+  }
+
   /** Vincula un miembro con un usuario. Un usuario tiene como mucho un miembro. */
   async linkUser({
     id,
@@ -343,7 +343,54 @@ export class StaffMemberRepository {
         .limit(1)
     )) as Array<{ id: string }>;
     if (rows[0] && rows[0].id !== exceptId) {
-      throw new Error('Ese usuario ya está vinculado a otro miembro del equipo.');
+      throw conflict('Ese usuario ya está vinculado a otro miembro del equipo.');
     }
   }
+}
+
+/** Un dato que choca con otro existente: el Core lo devuelve como `CONFLICT`. */
+function conflict(message: string): Error {
+  return Object.assign(new Error(message), { code: 'CONFLICT' as const });
+}
+
+/** Los filtros de `search`, compartidos con `countSearch`. */
+function searchConditions({ query, role, isActive }: SearchParams): SQL[] {
+  const conditions: SQL[] = [];
+
+  if (query) {
+    const pattern = `%${query}%`;
+    const matches = or(
+      ilike(contactTable.name, pattern),
+      ilike(contactTable.email, pattern),
+      ilike(contactTable.phone, pattern),
+      ilike(staffMemberTable.role, pattern),
+      ilike(staffMemberTable.specialty, pattern),
+      ilike(staffMemberTable.license_number, pattern)
+    );
+    if (matches) conditions.push(matches);
+  }
+
+  if (role) {
+    conditions.push(eq(staffMemberTable.role, role));
+  }
+
+  if (isActive !== undefined) {
+    conditions.push(eq(staffMemberTable.is_active, isActive));
+  }
+
+  return conditions;
+}
+
+/** Columnas por las que se ordena `search`; sin una conocida, por nombre del contacto. */
+const SORTABLE = {
+  name: contactTable.name,
+  role: staffMemberTable.role,
+  is_active: staffMemberTable.is_active,
+  created_at: staffMemberTable.created_at,
+} as const;
+
+function searchOrder(orderBy: string | undefined, orderDir: 'asc' | 'desc'): SQL {
+  const column = orderBy ? SORTABLE[orderBy as keyof typeof SORTABLE] : undefined;
+  if (!column) return asc(contactTable.name);
+  return orderDir === 'desc' ? desc(column) : asc(column);
 }

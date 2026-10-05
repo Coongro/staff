@@ -1,8 +1,9 @@
 /**
  * Hook para obtener un miembro del staff individual por ID.
  */
-import { getHostReact, actions } from '@coongro/plugin-sdk';
+import { getHostReact } from '@coongro/plugin-sdk';
 
+import { staffClient } from '../lib/staffClient.js';
 import type { StaffMember } from '../types/staff-member.js';
 
 const React = getHostReact();
@@ -37,11 +38,9 @@ export function useStaffMember(id: string | null | undefined): UseStaffMemberRes
     setLoading(true);
     setError(null);
     try {
-      const result = await actions.execute<StaffMember | undefined>('staff.members.getById', {
-        id,
-      });
+      const result = await staffClient.getById({ id });
       if (!mountedRef.current) return;
-      setMember(result ?? null);
+      setMember(result as StaffMember | null);
     } catch (err) {
       if (!mountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar miembro del staff');

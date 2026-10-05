@@ -1,8 +1,9 @@
 /**
  * Hook para operaciones de mutación de miembros del staff (crear, editar, eliminar).
  */
-import { getHostReact, actions, usePlugin } from '@coongro/plugin-sdk';
+import { getHostReact, usePlugin } from '@coongro/plugin-sdk';
 
+import { staffClient } from '../lib/staffClient.js';
 import type {
   StaffMember,
   StaffMemberCreateData,
@@ -31,9 +32,9 @@ export function useStaffMutations(): UseStaffMutationsResult {
     async (data: StaffMemberCreateData): Promise<StaffMember | null> => {
       setCreating(true);
       try {
-        const result = await actions.execute<StaffMember[]>('staff.members.create', { data });
+        const created = await staffClient.create({ data });
         toast.success('Personal creado', '');
-        return result[0] ?? null;
+        return created as unknown as StaffMember | null;
       } catch (err) {
         toast.error('Error', err instanceof Error ? err.message : 'No se pudo crear');
         return null;
@@ -48,9 +49,9 @@ export function useStaffMutations(): UseStaffMutationsResult {
     async (id: string, data: StaffMemberUpdateData): Promise<StaffMember | null> => {
       setUpdating(true);
       try {
-        const result = await actions.execute<StaffMember[]>('staff.members.update', { id, data });
+        const updated = await staffClient.update({ id, data });
         toast.success('Personal actualizado', '');
-        return result[0] ?? null;
+        return updated as unknown as StaffMember | null;
       } catch (err) {
         toast.error('Error', err instanceof Error ? err.message : 'No se pudo actualizar');
         return null;
@@ -65,7 +66,7 @@ export function useStaffMutations(): UseStaffMutationsResult {
     async (id: string): Promise<boolean> => {
       setDeleting(true);
       try {
-        await actions.execute('staff.members.delete', { id });
+        await staffClient.delete({ id });
         toast.success('Personal eliminado', '');
         return true;
       } catch (err) {

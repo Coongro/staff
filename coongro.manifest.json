@@ -1,7 +1,8 @@
 {
   "id": "staff",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "apiVersion": "2.0",
+  "engines": { "coongro": ">=0.61.0 <1.0.0" },
   "assets": {
     "styles": [
       "./dist/assets/tailwind.css",
@@ -11,10 +12,10 @@
   "contributes": {
     "menus": [],
     "views": [],
-    "repositories": [
+    "actionModules": [
       {
-        "module": "./dist/repositories/staff-member.repository.js",
-        "export": "StaffMemberRepository",
+        "module": "./dist/actions.js",
+        "export": "staffActions",
         "prefix": "staff.members",
         "actions": [
           "list",

@@ -70,9 +70,7 @@ export const staffActions = {
     .meta({ legacy: 'items' })
     .input(SearchInput)
     .handler(async ({ input, context }): Promise<Page<EnrichedStaffMemberRow>> => {
-      const repo = context.repo(StaffMemberRepository);
-      const [items, total] = await Promise.all([repo.search(input), repo.countSearch(input)]);
-      return { items, total };
+      return context.repo(StaffMemberRepository).searchPage(input);
     }),
 
   getById: query

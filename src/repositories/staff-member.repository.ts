@@ -167,35 +167,12 @@ export class StaffMemberRepository {
       let q = tx
         .select(ENRICHED_COLUMNS)
         .from(staffMemberTable)
-        .leftJoin(contactTable, CONTACT_JOIN);
-
-      if (conditions.length > 0) {
-        q = q.where(and(...conditions)) as typeof q;
-      }
-
-      // Ordenamiento — por defecto por nombre del contacto
-      const dirFn = orderDir === 'desc' ? desc : asc;
-      const sortableColumns: Record<string, () => typeof q> = {
-        name: () => q.orderBy(dirFn(contactTable.name)) as typeof q,
-        role: () => q.orderBy(dirFn(staffMemberTable.role)) as typeof q,
-        is_active: () => q.orderBy(dirFn(staffMemberTable.is_active)) as typeof q,
-        created_at: () => q.orderBy(dirFn(staffMemberTable.created_at)) as typeof q,
-      };
-
-      const applySorting = orderByField ? sortableColumns[orderByField] : undefined;
-      if (applySorting) {
-        q = applySorting();
-      } else {
-        q = q.orderBy(asc(contactTable.name)) as typeof q;
-      }
-
-      if (limit) {
-        q = q.limit(limit) as typeof q;
-      }
-
-      if (offset) {
-        q = q.offset(offset) as typeof q;
-      }
+        .leftJoin(contactTable, CONTACT_JOIN)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(searchOrder(orderByField, orderDir))
+        .$dynamic();
+      if (limit) q = q.limit(limit);
+      if (offset) q = q.offset(offset);
 
       return q;
     }) as Promise<EnrichedStaffMemberRow[]>;
@@ -277,6 +254,34 @@ export class StaffMemberRepository {
     if (candidates.length !== 1 || !candidates[0]) return null;
     await this.linkUser({ id: candidates[0].id, userId: user.id });
     return (await this.getByUser({ userId: user.id })) ?? null;
+  }
+
+  /**
+   * La página de `search` y cuántos cumplen los filtros, en UNA consulta:
+   * `count(*) OVER()` se calcula antes del LIMIT. Solo si la página vino vacía
+   * (un offset más allá del final) hace falta contar aparte.
+   */
+  async searchPage(
+    params: SearchParams
+  ): Promise<{ items: EnrichedStaffMemberRow[]; total: number }> {
+    const conditions = searchConditions(params);
+    const rows = (await this.db.ormQuery((tx) => {
+      let q = tx
+        .select({ ...ENRICHED_COLUMNS, total: sql<number>`count(*) over()`.mapWith(Number) })
+        .from(staffMemberTable)
+        .leftJoin(contactTable, CONTACT_JOIN)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(searchOrder(params.orderBy, params.orderDir ?? 'asc'))
+        .$dynamic();
+      if (params.limit) q = q.limit(params.limit);
+      if (params.offset) q = q.offset(params.offset);
+      return q;
+    })) as Array<EnrichedStaffMemberRow & { total: number }>;
+    if (rows.length === 0) {
+      return { items: [], total: params.offset ? await this.countSearch(params) : 0 };
+    }
+    const total = rows[0]?.total ?? 0;
+    return { items: rows.map(({ total: _total, ...row }) => row), total };
   }
 
   /** Cuántos miembros cumplen los filtros de `search` (sin paginar). */
@@ -374,4 +379,18 @@ function searchConditions({ query, role, isActive }: SearchParams): SQL[] {
   }
 
   return conditions;
+}
+
+/** Columnas por las que se ordena `search`; sin una conocida, por nombre del contacto. */
+const SORTABLE = {
+  name: contactTable.name,
+  role: staffMemberTable.role,
+  is_active: staffMemberTable.is_active,
+  created_at: staffMemberTable.created_at,
+} as const;
+
+function searchOrder(orderBy: string | undefined, orderDir: 'asc' | 'desc'): SQL {
+  const column = orderBy ? SORTABLE[orderBy as keyof typeof SORTABLE] : undefined;
+  if (!column) return asc(contactTable.name);
+  return orderDir === 'desc' ? desc(column) : asc(column);
 }

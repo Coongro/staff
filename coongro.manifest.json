@@ -31,7 +31,8 @@
           "linkUser",
           "unlinkUser",
           "listUsers"
-        ]
+        ],
+        "deleteAction": "delete"
       }
     ],
     "permissions": [

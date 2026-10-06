@@ -35,7 +35,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "check:actions": "node -e \"const f='../../scripts/check-action-refs.mjs';if(!require('fs').existsSync(f)){console.warn('check:actions: no está '+f+' (actualizá el Core); no se verificaron las acciones');process.exit(0)}process.exit(require('child_process').spawnSync(process.execPath,[f],{stdio:'inherit'}).status??1)\"",
-    "quality": "npm run typecheck && npm run format:check && npm run lint && npm run check:actions",
+    "quality": "npm run typecheck && npm run format:check && npm run lint && npm run test && npm run check:actions",
     "quality:fix": "npm run format && npm run lint:fix",
     "sync-version": "node scripts/sync-version.cjs",
     "version-packages": "node ../../scripts/version-packages.mjs",

@@ -19,7 +19,7 @@ export interface UseStaffMembersResult {
   filters: StaffFilters;
   setFilters: (filters: StaffFilters) => void;
   search: (query: string) => void;
-  setSort: (orderBy: string, orderDir: SortDirection) => void;
+  setSort: (orderBy: NonNullable<StaffFilters['orderBy']>, orderDir: SortDirection) => void;
   pagination: {
     page: number;
     pageSize: number;
@@ -55,8 +55,10 @@ export function useStaffMembers(options: UseStaffMembersOptions = {}): UseStaffM
     setLoading(true);
     setError(null);
     try {
+      const { isActive, ...rest } = filters;
       const result = await staffClient.search({
-        ...filters,
+        ...rest,
+        is_active: isActive,
         limit: pageSize,
         offset: (page - 1) * pageSize,
       });
@@ -100,10 +102,13 @@ export function useStaffMembers(options: UseStaffMembersOptions = {}): UseStaffM
     [totalPages]
   );
 
-  const setSort = useCallback((orderBy: string, orderDir: SortDirection) => {
-    setFilters((prev) => ({ ...prev, orderBy, orderDir }));
-    setPage(1);
-  }, []);
+  const setSort = useCallback(
+    (orderBy: NonNullable<StaffFilters['orderBy']>, orderDir: SortDirection) => {
+      setFilters((prev) => ({ ...prev, orderBy, orderDir }));
+      setPage(1);
+    },
+    []
+  );
 
   return {
     data,

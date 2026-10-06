@@ -6,6 +6,9 @@ import { eq, and, or, ilike, asc, desc, sql, isNull, isNotNull, type SQL } from 
 import { staffMemberTable } from '../schema/staff-member.js';
 import type { StaffMemberRow, NewStaffMemberRow } from '../schema/staff-member.js';
 
+/** Columnas por las que se ordena `search` (enum de la acción). */
+export const STAFF_SORTABLE = ['name', 'role', 'is_active', 'created_at'] as const;
+
 export interface SearchParams {
   query?: string;
   role?: string;

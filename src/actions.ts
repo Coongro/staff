@@ -101,7 +101,14 @@ export const staffActions = {
         (await context.repo(StaffMemberRepository).getByUser(input)) ?? null
     ),
 
-  getCurrent: query.handler(({ context }) => context.repo(StaffMemberRepository).getCurrent()),
+  /**
+   * El miembro del usuario de la sesión, vinculándolo por email si todavía no
+   * tiene uno y hay un único candidato. Es `mutation` porque puede escribir.
+   */
+  getCurrent: mutation.handler(({ context }) => context.repo(StaffMemberRepository).getCurrent()),
+
+  /** Lo mismo que `getCurrent`, con un nombre que dice que vincula. Para los llamadores nuevos. */
+  linkCurrent: mutation.handler(({ context }) => context.repo(StaffMemberRepository).linkCurrent()),
 
   listUsers: query.handler(({ context }) => context.repo(StaffMemberRepository).listUsers()),
 

@@ -1,12 +1,12 @@
 # UI Components Reference
 
-Catálogo de componentes disponibles en `@coongro/ui-components`, expuestos via `getHostUI()`.
+Catálogo de componentes disponibles en `@coongro/ui-components`. Se importan como cualquier
+módulo y se usan en JSX; el host los resuelve en runtime por su importmap.
 
-```ts
-import { getHostUI } from '@coongro/plugin-sdk';
-const UI = getHostUI();
+```tsx
+import { Button } from '@coongro/ui-components';
 
-// Usar: React.createElement(UI.Button, { variant: 'outline' }, 'Click')
+<Button variant="outline">Click</Button>
 ```
 
 ---
@@ -280,13 +280,15 @@ Renderiza íconos Lucide por nombre o SVG inline.
 ### useDebounce
 Hook para debounce de valores.
 ```ts
-const debouncedValue = UI.useDebounce(searchTerm, 300);
+import { useDebounce } from '@coongro/ui-components';
+const debouncedValue = useDebounce(searchTerm, 300);
 ```
 
 ### cn
 Utilidad para merge de clases CSS (clsx + tailwind-merge).
 ```ts
-UI.cn('base-class', condition && 'conditional', variable)
+import { cn } from '@coongro/ui-components';
+cn('base-class', condition && 'conditional', variable)
 ```
 
 ---

@@ -2,4 +2,4 @@
 "@coongro/staff": patch
 ---
 
-`staff.members.getCurrent` ya no escribe: el vínculo automático por email del usuario de la sesión pasa a la nueva mutation `staff.members.linkCurrent`. Requiere Core >=0.68.0.
+`staff.members.getCurrent` se declara `mutation` (puede vincular por email al usuario de la sesión, como antes) y se agrega `staff.members.linkCurrent`, la misma operación con un nombre explícito. Requiere Core >=0.68.0.

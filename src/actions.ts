@@ -2,14 +2,22 @@
  * Acciones de staff: el contrato que el Core valida y expone.
  *
  * Cada acción declara qué acepta y delega en el repositorio. Un registro se
- * devuelve como objeto (no `[registro]`) y los listados paginables como
- * `{ items, total }`; los que todavía llaman como antes reciben la forma vieja
- * mientras la acción declare `legacy`.
+ * devuelve como objeto (o `null`), la búsqueda es una página (`pageInput` →
+ * `{ items, total }`) y `list`, el equipo entero (las opciones de un selector),
+ * un array.
  */
 
-import { createInsertSchema, mutation, query, z, type Page } from '@coongro/plugin-sdk/actions';
+import {
+  createInsertSchema,
+  mutation,
+  pageInput,
+  query,
+  z,
+  type Page,
+} from '@coongro/plugin-sdk/actions';
 
 import {
+  STAFF_SORTABLE,
   StaffMemberRepository,
   type EnrichedStaffMemberRow,
 } from './repositories/staff-member.repository.js';
@@ -46,31 +54,28 @@ const Id = z.guid();
 const ById = z.object({ id: Id }).strict();
 const UserId = z.union([z.string(), z.number()]);
 
-const SearchInput = z
-  .object({
+/** Una página con los filtros de siempre: `query` sigue siendo el texto a buscar (o `search`). */
+const SearchInput = pageInput(
+  {
     query: z.string().optional(),
     role: z.string().optional(),
     isActive: z.boolean().optional(),
-    limit: z.number().int().positive().optional(),
-    offset: z.number().int().nonnegative().optional(),
-    orderBy: z.string().optional(),
-    orderDir: z.enum(['asc', 'desc']).optional(),
-  })
-  .strict();
+  },
+  { orderBy: [...STAFF_SORTABLE] }
+);
 
 export const staffActions = {
-  list: query
-    .meta({ legacy: 'items' })
-    .handler(async ({ context }): Promise<Page<EnrichedStaffMemberRow>> => {
-      const items = await context.repo(StaffMemberRepository).list();
-      return { items, total: items.length };
-    }),
+  /** El equipo entero: lo que listan los selectores de responsable. No crece con el uso. */
+  list: query.handler(
+    ({ context }): Promise<EnrichedStaffMemberRow[]> => context.repo(StaffMemberRepository).list()
+  ),
 
   search: query
-    .meta({ legacy: 'items' })
+    .meta({ page: true })
     .input(SearchInput)
-    .handler(async ({ input, context }): Promise<Page<EnrichedStaffMemberRow>> => {
-      return context.repo(StaffMemberRepository).searchPage(input);
+    .handler(({ input, context }): Promise<Page<EnrichedStaffMemberRow>> => {
+      const { search, query: text, ...filters } = input;
+      return context.repo(StaffMemberRepository).searchPage({ ...filters, query: text ?? search });
     }),
 
   getById: query
@@ -116,7 +121,6 @@ export const staffActions = {
   listUsers: query.handler(({ context }) => context.repo(StaffMemberRepository).listUsers()),
 
   create: mutation
-    .meta({ legacy: 'first' })
     .input(z.object({ data: StaffCreate }).strict())
     .handler(async ({ input, context }) => {
       const [created] = await context.repo(StaffMemberRepository).create(input);
@@ -124,7 +128,6 @@ export const staffActions = {
     }),
 
   update: mutation
-    .meta({ legacy: 'first' })
     .input(z.object({ id: Id, data: StaffPatch }).strict())
     .handler(async ({ input, context }) => {
       const [updated] = await context.repo(StaffMemberRepository).update(input);
@@ -132,20 +135,16 @@ export const staffActions = {
     }),
 
   linkUser: mutation
-    .meta({ legacy: 'first' })
     .input(z.object({ id: Id, userId: UserId }).strict())
     .handler(async ({ input, context }) => {
       const [linked] = await context.repo(StaffMemberRepository).linkUser(input);
       return linked ?? null;
     }),
 
-  unlinkUser: mutation
-    .meta({ legacy: 'first' })
-    .input(ById)
-    .handler(async ({ input, context }) => {
-      const [unlinked] = await context.repo(StaffMemberRepository).unlinkUser(input);
-      return unlinked ?? null;
-    }),
+  unlinkUser: mutation.input(ById).handler(async ({ input, context }) => {
+    const [unlinked] = await context.repo(StaffMemberRepository).unlinkUser(input);
+    return unlinked ?? null;
+  }),
 
   delete: mutation
     .meta({ effect: 'destructive' })

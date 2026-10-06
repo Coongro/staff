@@ -45,13 +45,17 @@ const ENRICHED_COLUMNS = {
 /** `contact_id` es texto y `contacts.id` uuid: se compara como texto. */
 const CONTACT_JOIN = eq(staffMemberTable.contact_id, sql`${contactTable.id}::text`);
 
-/** Lo que usa el repositorio del contexto del plugin (`PluginContext`). */
+/**
+ * Lo que usa el repositorio del contexto del plugin (`PluginContext`). Otros plugins lo
+ * construyen sin contexto para leer (`new StaffMemberRepository(db)`): sin contexto no hay
+ * usuario de la sesión.
+ */
 export type StaffRepositoryContext = Pick<PluginContext, 'users'>;
 
 export class StaffMemberRepository {
   constructor(
     private readonly db: ModuleDatabaseAPI,
-    private readonly context: StaffRepositoryContext
+    private readonly context?: StaffRepositoryContext
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -239,7 +243,7 @@ export class StaffMemberRepository {
    * email. Sin sesión o sin coincidencia devuelve `null`.
    */
   async linkCurrent(): Promise<EnrichedStaffMemberRow | null> {
-    const user = await this.context.users.current();
+    const user = this.context ? await this.context.users.current() : null;
     if (!user) return null;
     const linked = await this.getByUser({ userId: user.id });
     if (linked) return linked;
@@ -321,7 +325,7 @@ export class StaffMemberRepository {
    * ve solo el dueño del negocio (regla del Core en GET /users).
    */
   async listUsers(): Promise<Array<{ id: string; name: string; staff_id: string | null }>> {
-    const users = await this.context.users.list();
+    const users = this.context ? await this.context.users.list() : [];
     const links = (await this.db.ormQuery((tx) =>
       tx
         .select({ id: staffMemberTable.id, user_id: staffMemberTable.user_id })

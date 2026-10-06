@@ -54,12 +54,15 @@ const Id = z.guid();
 const ById = z.object({ id: Id }).strict();
 const UserId = z.union([z.string(), z.number()]);
 
-/** Una página con los filtros de siempre: `query` sigue siendo el texto a buscar (o `search`). */
+/**
+ * Una página: `query` sigue siendo el texto a buscar (o `search`) y los filtros
+ * de igualdad llevan el nombre de su columna (`role`, `is_active`).
+ */
 const SearchInput = pageInput(
   {
     query: z.string().optional(),
     role: z.string().optional(),
-    isActive: z.boolean().optional(),
+    is_active: z.boolean().optional(),
   },
   { orderBy: [...STAFF_SORTABLE] }
 );
@@ -74,8 +77,10 @@ export const staffActions = {
     .meta({ page: true })
     .input(SearchInput)
     .handler(({ input, context }): Promise<Page<EnrichedStaffMemberRow>> => {
-      const { search, query: text, ...filters } = input;
-      return context.repo(StaffMemberRepository).searchPage({ ...filters, query: text ?? search });
+      const { search, query: text, is_active, ...filters } = input;
+      return context
+        .repo(StaffMemberRepository)
+        .searchPage({ ...filters, isActive: is_active, query: text ?? search });
     }),
 
   getById: query

@@ -66,7 +66,7 @@ describe('forma canónica', () => {
     const ctx = testContext({ db });
     const vets = await callAction<{ total: number }>(
       staffActions.search,
-      { role: 'vet', isActive: true },
+      { role: 'vet', is_active: true },
       ctx
     );
     expect(vets.total).toBe(1);

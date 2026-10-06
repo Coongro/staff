@@ -55,8 +55,10 @@ export function useStaffMembers(options: UseStaffMembersOptions = {}): UseStaffM
     setLoading(true);
     setError(null);
     try {
+      const { isActive, ...rest } = filters;
       const result = await staffClient.search({
-        ...filters,
+        ...rest,
+        is_active: isActive,
         limit: pageSize,
         offset: (page - 1) * pageSize,
       });

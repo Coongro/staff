@@ -2,7 +2,7 @@
   "id": "staff",
   "version": "0.4.2",
   "apiVersion": "2.0",
-  "engines": { "coongro": ">=0.68.0 <1.0.0" },
+  "engines": { "coongro": ">=0.69.0 <1.0.0" },
   "assets": {
     "styles": [
       "./dist/assets/tailwind.css",

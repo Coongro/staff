@@ -1,7 +1,8 @@
 /**
  * Hook para operaciones de mutación de miembros del staff (crear, editar, eliminar).
  */
-import { getHostReact, usePlugin } from '@coongro/plugin-sdk';
+import { usePlugin } from '@coongro/plugin-sdk';
+import { useCallback, useState } from 'react';
 
 import { staffClient } from '../lib/staffClient.js';
 import type {
@@ -9,9 +10,6 @@ import type {
   StaffMemberCreateData,
   StaffMemberUpdateData,
 } from '../types/staff-member.js';
-
-const React = getHostReact();
-const { useState, useCallback } = React;
 
 export interface UseStaffMutationsResult {
   creating: boolean;

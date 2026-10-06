@@ -3,7 +3,19 @@
  * Usa UI.Combobox con búsqueda server-side.
  * Nombre y datos personales vienen del contacto vinculado.
  */
-import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import {
+  Chip,
+  Combobox,
+  ComboboxChipTrigger,
+  ComboboxContent,
+  ComboboxCreate,
+  ComboboxEmpty,
+  ComboboxGroup,
+  ComboboxItem,
+  LoadingOverlay,
+  useComboboxContext,
+} from '@coongro/ui-components';
+import { useCallback, useEffect } from 'react';
 import type { ReactElement } from 'react';
 
 import { useStaffMember } from '../hooks/useStaffMember.js';
@@ -12,17 +24,20 @@ import { getInitials, getAvatarColor, formatStaffSubtitle } from '../lib/avatar.
 import type { StaffPickerProps } from '../types/components.js';
 import type { StaffMember } from '../types/staff-member.js';
 
-const React = getHostReact();
-const UI = getHostUI();
-const { useCallback, useEffect } = React;
-
-function AvatarCircle({ name, isActive, size }: { name: string; isActive: boolean; size: number }) {
+function AvatarCircle({
+  name,
+  isActive,
+  size,
+}: {
+  name: string;
+  isActive: boolean;
+  size: number;
+}): ReactElement {
   const color = getAvatarColor(name, isActive);
   const initials = getInitials(name);
-  return React.createElement(
-    'span',
-    {
-      style: {
+  return (
+    <span
+      style={{
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -33,9 +48,10 @@ function AvatarCircle({ name, isActive, size }: { name: string; isActive: boolea
         fontWeight: 600,
         backgroundColor: color.bg,
         color: color.text,
-      },
-    },
-    initials
+      }}
+    >
+      {initials}
+    </span>
   );
 }
 
@@ -76,44 +92,37 @@ export function StaffPicker(props: StaffPickerProps): ReactElement {
     [data, onChange]
   );
 
-  return React.createElement(
-    UI.Combobox,
-    {
-      value: value ?? '',
-      onValueChange: handleValueChange,
-      debounceMs: 200,
-    },
+  return (
+    <Combobox value={value ?? ''} onValueChange={handleValueChange} debounceMs={200}>
+      {/* Trigger */}
+      <ComboboxChipTrigger
+        placeholder={placeholder}
+        className={disabled ? `pointer-events-none opacity-60 ${className}` : className}
+        renderChip={(_val: string, onRemove: () => void) => {
+          const name = selectedMember?.contact_name ?? '...';
+          return (
+            <Chip
+              size="sm"
+              icon={
+                <AvatarCircle name={name} isActive={selectedMember?.is_active ?? true} size={20} />
+              }
+              onRemove={disabled ? undefined : onRemove}
+            >
+              {name}
+            </Chip>
+          );
+        }}
+      />
 
-    // Trigger
-    React.createElement(UI.ComboboxChipTrigger, {
-      placeholder,
-      className: disabled ? `pointer-events-none opacity-60 ${className}` : className,
-      renderChip: (_val: string, onRemove: () => void) => {
-        const name = selectedMember?.contact_name ?? '...';
-        return React.createElement(
-          UI.Chip,
-          {
-            size: 'sm',
-            icon: React.createElement(AvatarCircle, {
-              name,
-              isActive: selectedMember?.is_active ?? true,
-              size: 20,
-            }),
-            onRemove: disabled ? undefined : onRemove,
-          },
-          name
-        );
-      },
-    }),
-
-    // Dropdown
-    React.createElement(StaffDropdown, {
-      data,
-      loading,
-      searchFn: searchStaff,
-      allowCreate,
-      onCreateClick,
-    })
+      {/* Dropdown */}
+      <StaffDropdown
+        data={data}
+        loading={loading}
+        searchFn={searchStaff}
+        allowCreate={allowCreate}
+        onCreateClick={onCreateClick}
+      />
+    </Combobox>
   );
 }
 
@@ -129,59 +138,50 @@ interface StaffDropdownProps {
   onCreateClick?: (query: string) => void;
 }
 
-function StaffDropdown(props: StaffDropdownProps) {
+function StaffDropdown(props: StaffDropdownProps): ReactElement {
   const { data, loading, searchFn, allowCreate, onCreateClick } = props;
-  const { search, debouncedSearch, setOpen } = UI.useComboboxContext();
+  const { search, debouncedSearch, setOpen } = useComboboxContext();
 
   useEffect(() => {
     searchFn(debouncedSearch);
   }, [debouncedSearch, searchFn]);
 
-  return React.createElement(
-    UI.ComboboxContent,
-    { className: 'max-h-[280px] overflow-y-auto' },
+  let results: ReactElement;
+  if (loading) {
+    results = (
+      <LoadingOverlay variant="dots" label="Buscando..." inline className="justify-center py-4" />
+    );
+  } else if (data.length === 0) {
+    results = <ComboboxEmpty>{search ? 'Sin resultados' : 'Escribí para buscar'}</ComboboxEmpty>;
+  } else {
+    results = (
+      <ComboboxGroup>
+        {data.map((member: StaffMember) => (
+          <ComboboxItem
+            key={member.id}
+            value={member.id}
+            icon={<AvatarCircle name={member.contact_name} isActive={member.is_active} size={32} />}
+            subtitle={formatStaffSubtitle(member.role, member.specialty)}
+          >
+            {member.contact_name}
+          </ComboboxItem>
+        ))}
+      </ComboboxGroup>
+    );
+  }
 
-    loading
-      ? React.createElement(UI.LoadingOverlay, {
-          variant: 'dots',
-          label: 'Buscando...',
-          inline: true,
-          className: 'justify-center py-4',
-        })
-      : data.length === 0
-        ? React.createElement(
-            UI.ComboboxEmpty,
-            null,
-            search ? 'Sin resultados' : 'Escribí para buscar'
-          )
-        : React.createElement(
-            UI.ComboboxGroup,
-            null,
-            data.map((member: StaffMember) =>
-              React.createElement(
-                UI.ComboboxItem,
-                {
-                  key: member.id,
-                  value: member.id,
-                  icon: React.createElement(AvatarCircle, {
-                    name: member.contact_name,
-                    isActive: member.is_active,
-                    size: 32,
-                  }),
-                  subtitle: formatStaffSubtitle(member.role, member.specialty),
-                },
-                member.contact_name
-              )
-            )
-          ),
-
-    allowCreate &&
-      React.createElement(UI.ComboboxCreate, {
-        onCreate: (searchValue: string) => {
-          onCreateClick?.(searchValue);
-          setOpen(false);
-        },
-        label: 'Crear "{search}"',
-      })
+  return (
+    <ComboboxContent className="max-h-[280px] overflow-y-auto">
+      {results}
+      {allowCreate && (
+        <ComboboxCreate
+          onCreate={(searchValue: string) => {
+            onCreateClick?.(searchValue);
+            setOpen(false);
+          }}
+          label={'Crear "{search}"'}
+        />
+      )}
+    </ComboboxContent>
   );
 }

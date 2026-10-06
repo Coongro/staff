@@ -28,6 +28,7 @@
     "copy:fontawesome": "node scripts/copy-fontawesome.cjs",
     "dev": "npm run build:css && tsc --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
     "db:generate": "drizzle-kit generate",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
@@ -63,6 +64,7 @@
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.3.0",
+    "vitest": "^1.6.0",
     "drizzle-orm": "^0.38.3",
     "@fortawesome/fontawesome-free": "^6.5.0"
   }

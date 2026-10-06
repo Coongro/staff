@@ -2,7 +2,7 @@
   "id": "staff",
   "version": "0.4.1",
   "apiVersion": "2.0",
-  "engines": { "coongro": ">=0.61.0 <1.0.0" },
+  "engines": { "coongro": ">=0.68.0 <1.0.0" },
   "assets": {
     "styles": [
       "./dist/assets/tailwind.css",
@@ -28,6 +28,7 @@
           "findByContactId",
           "getByUser",
           "getCurrent",
+          "linkCurrent",
           "linkUser",
           "unlinkUser",
           "listUsers"
@@ -61,6 +62,7 @@
         "grants": {
           "actions": [
             "staff.members.create",
+            "staff.members.linkCurrent",
             "staff.members.linkUser",
             "staff.members.listUsers",
             "staff.members.unlinkUser",

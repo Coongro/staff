@@ -231,12 +231,22 @@ export class StaffMemberRepository {
   }
 
   /**
-   * El miembro del usuario de la sesión. Si todavía no hay uno vinculado y existe
-   * un único miembro sin usuario cuyo contacto tiene el mismo email, lo vincula
-   * (así «Mías» funciona sin configurar nada cuando los datos coinciden). Sin
-   * sesión o sin coincidencia devuelve `null`.
+   * El miembro vinculado al usuario de la sesión, o `null` (sin sesión o sin
+   * vínculo). Solo lee: vincular por email es `linkCurrent`.
    */
   async getCurrent(): Promise<EnrichedStaffMemberRow | null> {
+    const user = this.context?.users ? await this.context.users.current() : null;
+    if (!user) return null;
+    return (await this.getByUser({ userId: user.id })) ?? null;
+  }
+
+  /**
+   * Como `getCurrent`, pero si el usuario de la sesión todavía no tiene miembro y
+   * existe un único miembro sin usuario cuyo contacto tiene su mismo email, lo
+   * vincula (así «Mías» funciona sin configurar nada cuando los datos coinciden).
+   * Sin sesión o sin coincidencia devuelve `null`.
+   */
+  async linkCurrent(): Promise<EnrichedStaffMemberRow | null> {
     const user = this.context?.users ? await this.context.users.current() : null;
     if (!user) return null;
     const linked = await this.getByUser({ userId: user.id });

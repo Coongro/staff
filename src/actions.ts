@@ -102,12 +102,15 @@ export const staffActions = {
     ),
 
   /**
-   * El miembro del usuario de la sesión, vinculándolo por email si todavía no
-   * tiene uno y hay un único candidato. Es `mutation` porque puede escribir.
+   * El miembro vinculado al usuario de la sesión, o `null`. Solo lee: no vincula
+   * (para eso está `linkCurrent`), por eso lo otorga el permiso de ver.
    */
-  getCurrent: mutation.handler(({ context }) => context.repo(StaffMemberRepository).getCurrent()),
+  getCurrent: query.handler(({ context }) => context.repo(StaffMemberRepository).getCurrent()),
 
-  /** Lo mismo que `getCurrent`, con un nombre que dice que vincula. Para los llamadores nuevos. */
+  /**
+   * El miembro del usuario de la sesión, vinculándolo por email si todavía no
+   * tiene uno y hay un único candidato. Es `mutation` porque escribe.
+   */
   linkCurrent: mutation.handler(({ context }) => context.repo(StaffMemberRepository).linkCurrent()),
 
   listUsers: query.handler(({ context }) => context.repo(StaffMemberRepository).listUsers()),

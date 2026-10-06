@@ -112,5 +112,8 @@ module.exports = {
     'coverage/',
     '*.min.js',
     '*.d.ts',
+    // El tsconfig excluye los tests para que no lleguen a dist; sin project no hay
+    // linting con tipos, y dejarlos daría un error de parseo en cada corrida.
+    '*.test.ts',
   ],
 };

@@ -9,7 +9,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "lib": [
       "ES2022",
       "DOM"
@@ -26,6 +26,9 @@
     "emitDecoratorMetadata": true,
     "baseUrl": ".",
     "paths": {
+      "@coongro/ui-components": [
+        "../../packages/ui-components/dist/index.d.ts"
+      ],
       "@coongro/plugin-sdk": [
         "../../packages/plugin-sdk/dist/index.d.ts"
       ],

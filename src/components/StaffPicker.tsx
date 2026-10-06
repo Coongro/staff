@@ -4,6 +4,7 @@
  * Nombre y datos personales vienen del contacto vinculado.
  */
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import type { ReactElement } from 'react';
 
 import { useStaffMember } from '../hooks/useStaffMember.js';
 import { useStaffMembers } from '../hooks/useStaffMembers.js';
@@ -38,7 +39,7 @@ function AvatarCircle({ name, isActive, size }: { name: string; isActive: boolea
   );
 }
 
-export function StaffPicker(props: StaffPickerProps) {
+export function StaffPicker(props: StaffPickerProps): ReactElement {
   const {
     filters = {},
     value,

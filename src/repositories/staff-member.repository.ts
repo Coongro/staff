@@ -234,9 +234,19 @@ export class StaffMemberRepository {
    * El miembro del usuario de la sesión. Si todavía no hay uno vinculado y existe
    * un único miembro sin usuario cuyo contacto tiene el mismo email, lo vincula
    * (así «Mías» funciona sin configurar nada cuando los datos coinciden). Sin
-   * sesión o sin coincidencia devuelve `null`.
+   * sesión o sin coincidencia devuelve `null`. Puede escribir: es lo mismo que
+   * `linkCurrent`, que es el nombre que deberían usar los llamadores nuevos.
    */
   async getCurrent(): Promise<EnrichedStaffMemberRow | null> {
+    return this.linkCurrent();
+  }
+
+  /**
+   * El miembro del usuario de la sesión, vinculándolo por email si todavía no
+   * tiene uno y hay un único miembro sin usuario cuyo contacto tiene su mismo
+   * email. Sin sesión o sin coincidencia devuelve `null`.
+   */
+  async linkCurrent(): Promise<EnrichedStaffMemberRow | null> {
     const user = this.context?.users ? await this.context.users.current() : null;
     if (!user) return null;
     const linked = await this.getByUser({ userId: user.id });

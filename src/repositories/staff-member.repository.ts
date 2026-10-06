@@ -1,5 +1,6 @@
 import { contactTable } from '@coongro/contacts/server';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
+import type { PluginContext } from '@coongro/plugin-sdk/server';
 import { eq, and, or, ilike, asc, desc, sql, isNull, isNotNull, type SQL } from 'drizzle-orm';
 
 import { staffMemberTable } from '../schema/staff-member.js';
@@ -45,16 +46,11 @@ const ENRICHED_COLUMNS = {
 const CONTACT_JOIN = eq(staffMemberTable.contact_id, sql`${contactTable.id}::text`);
 
 /**
- * Contexto que el runtime pasa como segundo argumento al repositorio
- * (`new Repo(db, context)`). Mínimo y opcional: con un Core que no lo manda, las
- * acciones que dependen del usuario actual devuelven `null`.
+ * Lo que usa el repositorio del contexto del plugin (`PluginContext`). Otros plugins lo
+ * construyen sin contexto para leer (`new StaffMemberRepository(db)`): sin contexto no hay
+ * usuario de la sesión.
  */
-export interface StaffRepositoryContext {
-  users?: {
-    current(): Promise<{ id: number | string; name?: string | null; email?: string | null } | null>;
-    list?(): Promise<Array<{ id: number | string; name?: string | null; email?: string | null }>>;
-  };
-}
+export type StaffRepositoryContext = Pick<PluginContext, 'users'>;
 
 export class StaffMemberRepository {
   constructor(
@@ -247,7 +243,7 @@ export class StaffMemberRepository {
    * email. Sin sesión o sin coincidencia devuelve `null`.
    */
   async linkCurrent(): Promise<EnrichedStaffMemberRow | null> {
-    const user = this.context?.users ? await this.context.users.current() : null;
+    const user = this.context ? await this.context.users.current() : null;
     if (!user) return null;
     const linked = await this.getByUser({ userId: user.id });
     if (linked) return linked;
@@ -329,7 +325,7 @@ export class StaffMemberRepository {
    * ve solo el dueño del negocio (regla del Core en GET /users).
    */
   async listUsers(): Promise<Array<{ id: string; name: string; staff_id: string | null }>> {
-    const users = this.context?.users?.list ? await this.context.users.list() : [];
+    const users = this.context ? await this.context.users.list() : [];
     const links = (await this.db.ormQuery((tx) =>
       tx
         .select({ id: staffMemberTable.id, user_id: staffMemberTable.user_id })

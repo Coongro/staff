@@ -1,13 +1,10 @@
 /**
  * Hook para obtener un miembro del staff individual por ID.
  */
-import { getHostReact } from '@coongro/plugin-sdk';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { staffClient } from '../lib/staffClient.js';
 import type { StaffMember } from '../types/staff-member.js';
-
-const React = getHostReact();
-const { useState, useEffect, useCallback, useRef } = React;
 
 export interface UseStaffMemberResult {
   member: StaffMember | null;

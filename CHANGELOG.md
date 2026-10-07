@@ -1,5 +1,20 @@
 # @coongro/staff
 
+## 0.5.0
+
+### Minor Changes
+
+- Forma canónica de las acciones, sin `legacy` (requiere Core ≥ 0.70):
+  - `staff.members.list`: devuelve el equipo como array (antes `{ items, total }` adaptado a array para quien no pedía la forma nueva). Es lo que listan los selectores de responsable.
+  - `staff.members.search`: siempre `{ items, total }` (`pageInput`): sin `limit` trae 50 (antes, todos); acepta `search` además de `query`, el filtro `isActive` pasa a `is_active` (como la columna; `StaffFilters` de los componentes no cambia) y `orderBy` solo `name`, `role`, `is_active` o `created_at`.
+  - `staff.members.create`, `update`, `linkUser`, `unlinkUser`: devuelven el registro (o `null`), nunca `[registro]`.
+
+- `staff.members.getCurrent` pasa a ser una lectura pura (`query`): devuelve el miembro vinculado al usuario de la sesión o `null`, y ya no lo vincula por email. Para vincular automáticamente está `staff.members.linkCurrent` (y `StaffMemberRepository.linkCurrent()` para otros plugins). Así el permiso de ver empleados, que otorga `getCurrent`, ya no permite escribir.
+
+### Patch Changes
+
+- Requiere Coongro 0.72.0 o posterior: las acciones responden la forma canónica, las listas paginadas aceptan llamarse sin argumentos y las vistas leen sus parámetros por instancia.
+
 ## 0.4.3
 
 ### Patch Changes

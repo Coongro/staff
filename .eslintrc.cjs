@@ -92,9 +92,9 @@ module.exports = {
         'max-lines-per-function': ['warn', { max: 100, skipBlankLines: true, skipComments: true }],
       },
     },
-    // Vistas de plugin — usan getHostUI() cuyos tipos dependen de @coongro/ui-components
-    // que no esta disponible en el tsconfig del plugin (se carga en runtime desde el host).
-    // Los tipos del SDK retornan 'error' type, causando falsos positivos en no-unsafe-*.
+    // Vistas de plugin — usan los componentes del host (`@coongro/ui-components`, que el host
+    // resuelve en runtime por su importmap). Si sus tipos no resuelven en el tsconfig del plugin,
+    // llegan como 'error' type y dan falsos positivos en no-unsafe-*.
     {
       files: ['src/views/**/*.tsx', 'src/components/**/*.tsx', 'src/contributions/**/*.tsx'],
       rules: {
@@ -112,5 +112,8 @@ module.exports = {
     'coverage/',
     '*.min.js',
     '*.d.ts',
+    // El tsconfig excluye los tests para que no lleguen a dist; sin project no hay
+    // linting con tipos, y dejarlos daría un error de parseo en cada corrida.
+    '*.test.ts',
   ],
 };

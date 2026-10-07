@@ -6,6 +6,9 @@ import { eq, and, or, ilike, asc, desc, sql, isNull, isNotNull, type SQL } from 
 import { staffMemberTable } from '../schema/staff-member.js';
 import type { StaffMemberRow, NewStaffMemberRow } from '../schema/staff-member.js';
 
+/** Columnas por las que se ordena `search` (enum de la acción). */
+export const STAFF_SORTABLE = ['name', 'role', 'is_active', 'created_at'] as const;
+
 export interface SearchParams {
   query?: string;
   role?: string;
@@ -227,20 +230,22 @@ export class StaffMemberRepository {
   }
 
   /**
-   * El miembro del usuario de la sesión. Si todavía no hay uno vinculado y existe
-   * un único miembro sin usuario cuyo contacto tiene el mismo email, lo vincula
-   * (así «Mías» funciona sin configurar nada cuando los datos coinciden). Sin
-   * sesión o sin coincidencia devuelve `null`. Puede escribir: es lo mismo que
-   * `linkCurrent`, que es el nombre que deberían usar los llamadores nuevos.
+   * El miembro vinculado al usuario de la sesión, o `null` (sin sesión o sin
+   * vínculo). Solo lee: no vincula aunque haya un miembro con el mismo email.
+   * Quien necesite el vínculo automático por email llama a `linkCurrent`.
    */
   async getCurrent(): Promise<EnrichedStaffMemberRow | null> {
-    return this.linkCurrent();
+    const user = this.context ? await this.context.users.current() : null;
+    if (!user) return null;
+    return (await this.getByUser({ userId: user.id })) ?? null;
   }
 
   /**
    * El miembro del usuario de la sesión, vinculándolo por email si todavía no
    * tiene uno y hay un único miembro sin usuario cuyo contacto tiene su mismo
-   * email. Sin sesión o sin coincidencia devuelve `null`.
+   * email (así «Mías» funciona sin configurar nada cuando los datos coinciden).
+   * Sin sesión o sin coincidencia devuelve `null`. Escribe: es la versión de
+   * `getCurrent` que vincula.
    */
   async linkCurrent(): Promise<EnrichedStaffMemberRow | null> {
     const user = this.context ? await this.context.users.current() : null;

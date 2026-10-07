@@ -9,6 +9,7 @@ export interface StaffFilters {
   isActive?: boolean;
   limit?: number;
   offset?: number;
-  orderBy?: string;
+  /** Columnas ordenables de `staff.members.search`. */
+  orderBy?: 'name' | 'role' | 'is_active' | 'created_at';
   orderDir?: SortDirection;
 }
